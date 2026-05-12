@@ -1,0 +1,131 @@
+.profile-header {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.profile-avatar.placeholder {
+  background: var(--border);
+}
+
+.profile-name {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+}
+
+.profile-msg {
+  margin-top: 12px;
+  display: inline-flex;
+}
+
+.friends-section h2 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+
+.friends-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.friend-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.friend-chip:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.friend-chip img,
+.friend-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.friend-placeholder {
+  background: var(--border);
+  display: inline-block;
+}
+
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-bio {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.profile-field,
+.profile-textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.profile-textarea {
+  resize: vertical;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.profile-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.profile-upload input {
+  display: none;
+}
+
+.profile-edit-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-edit {
+  margin-top: 8px;
+}

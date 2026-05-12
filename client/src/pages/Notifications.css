@@ -1,0 +1,75 @@
+.notif-page h1 {
+  font-size: 1.25rem;
+  margin: 0 0 16px;
+}
+
+.notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.notif-item.read {
+  opacity: 0.65;
+}
+
+.notif-link {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: inherit;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-link:hover {
+  color: var(--accent);
+}
+
+.notif-av {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.notif-av.placeholder {
+  background: var(--border);
+  display: inline-block;
+}
+
+.notif-link p {
+  margin: 0 0 4px;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.notif-actions {
+  flex-shrink: 0;
+}
