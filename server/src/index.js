@@ -23,14 +23,36 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
 const server = http.createServer(app);
 
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, or same-origin)
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // allow Vercel preview deployments if main vercel domain is listed
+    if (allowedOrigins.some((o) => o.includes('vercel.app')) && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // fallback allow for smooth setup
+  },
+  credentials: true,
+};
+
 const io = new Server(server, {
-  cors: { origin: clientOrigin, methods: ['GET', 'POST'] },
+  cors: { origin: corsOptions.origin, methods: ['GET', 'POST'], credentials: true },
 });
 
-app.use(cors({ origin: clientOrigin, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+  },
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);

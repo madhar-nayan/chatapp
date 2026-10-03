@@ -26,7 +26,10 @@ export default function AuthPage() {
       if (avatar) fd.append('profilePicture', avatar);
       await register(fd);
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not create account');
+      const msg = typeof err.response?.data?.error === 'string'
+        ? err.response.data.error
+        : (err.message || 'Could not create account');
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -39,7 +42,10 @@ export default function AuthPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      const msg = typeof err.response?.data?.error === 'string'
+        ? err.response.data.error
+        : (err.message || 'Login failed');
+      setError(msg);
     } finally {
       setBusy(false);
     }
