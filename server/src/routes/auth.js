@@ -92,6 +92,10 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
 
     const resetUrl = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/reset-password/${token}`;
+    console.log('\n========================================');
+    console.log(`[PASSWORD RESET LINK]: ${resetUrl}`);
+    console.log('========================================\n');
+
     const subject = 'Password reset request';
     const text = `You requested a password reset. Use this link to set a new password:\n\n${resetUrl}\n\nIf you did not request this, ignore this email.`;
     const html = `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>If you did not request this, ignore this message.</p>`;
@@ -102,9 +106,12 @@ router.post('/forgot-password', async (req, res) => {
       const detail =
         mailErr instanceof Error ? mailErr.message : 'Unknown email error';
       console.error('Password reset email failed:', detail);
-      return res.status(503).json({
-        error: detail,
-      });
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(503).json({
+          error: detail,
+        });
+      }
+      console.warn('⚠️ Development mode: Email delivery failed, but reset link was generated and logged above.');
     }
 
     return genericOk();
