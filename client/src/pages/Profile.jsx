@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Edit3, MessageSquare, Camera, Check, X, Users, Mail, Sparkles } from 'lucide-react';
 import client from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { mediaUrl } from '../utils/mediaUrl.js';
+import Avatar from '../components/common/Avatar.jsx';
+import { Skeleton } from '../components/common/Skeleton.jsx';
 import './Profile.css';
 
 export default function Profile({ self }) {
@@ -16,6 +18,7 @@ export default function Profile({ self }) {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [pictureFile, setPictureFile] = useState(null);
+  const [picturePreview, setPicturePreview] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -27,7 +30,7 @@ export default function Profile({ self }) {
         const { data } = await client.get(`/api/users/${userId}`);
         if (!cancelled) setProfile(data.user);
       } catch {
-        if (!cancelled) setError('Profile not found');
+        if (!cancelled) setError('Profile not found.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -42,6 +45,7 @@ export default function Profile({ self }) {
     setUsername(profile.username || '');
     setBio(profile.bio || '');
     setPictureFile(null);
+    setPicturePreview(null);
   }, [profile]);
 
   useEffect(() => {
@@ -49,7 +53,13 @@ export default function Profile({ self }) {
   }, [self, refreshUser]);
 
   const handleFileChange = (event) => {
-    setPictureFile(event.target.files?.[0] ?? null);
+    const selected = event.target.files?.[0] ?? null;
+    setPictureFile(selected);
+    if (selected) {
+      setPicturePreview(URL.createObjectURL(selected));
+    } else {
+      setPicturePreview(null);
+    }
   };
 
   const handleCancel = () => {
@@ -58,13 +68,14 @@ export default function Profile({ self }) {
       setUsername(profile.username || '');
       setBio(profile.bio || '');
       setPictureFile(null);
+      setPicturePreview(null);
     }
     setError('');
   };
 
   const handleSave = async () => {
     if (!username.trim()) {
-      setError('Username is required');
+      setError('Username is required.');
       return;
     }
 
@@ -91,6 +102,7 @@ export default function Profile({ self }) {
       setProfile(data.user);
       setEditing(false);
       setPictureFile(null);
+      setPicturePreview(null);
     } catch (e) {
       setError(e.response?.data?.error || 'Could not update profile');
     } finally {
@@ -98,107 +110,173 @@ export default function Profile({ self }) {
     }
   };
 
-  if (loading) return <p className="muted container">Loading…</p>;
-  if (error && !profile) return <p className="error-msg container">{error || 'Not found'}</p>;
+  if (loading) {
+    return (
+      <div className="profile-page container">
+        <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+          <Skeleton style={{ width: '80px', height: '80px', borderRadius: '50%', margin: '0 auto 16px' }} />
+          <Skeleton style={{ width: '160px', height: '24px', margin: '0 auto 8px' }} />
+          <Skeleton style={{ width: '220px', height: '16px', margin: '0 auto' }} />
+        </div>
+      </div>
+    );
+  }
 
-  const pic = mediaUrl(profile.profilePicture);
+  if (error && !profile) {
+    return (
+      <div className="profile-page container">
+        <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+          <p className="error-msg" style={{ justifyContent: 'center' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page container">
-      <div className="profile-header card">
-        {pic ? <img className="profile-avatar" src={pic} alt="" /> : <div className="profile-avatar placeholder" />}
-        <div className="profile-main">
-          {editing ? (
-            <input
-              className="profile-field"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Username"
+      {/* Profile Header Card */}
+      <div className="profile-header-card card animate-fade-in">
+        <div className="profile-cover-banner" />
+
+        <div className="profile-header-content">
+          {/* Avatar Area */}
+          <div className="profile-avatar-container">
+            <Avatar
+              src={picturePreview || profile.profilePicture}
+              name={profile.username}
+              size="xxl"
+              showBorder
             />
-          ) : (
-            <h1 className="profile-name">{profile.username}</h1>
-          )}
+            {editing && (
+              <label className="profile-avatar-overlay" title="Change picture">
+                <Camera size={24} color="#FFFFFF" />
+                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+              </label>
+            )}
+          </div>
 
-          {editing ? (
-            <textarea
-              className="profile-textarea"
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-              placeholder="Add a short bio"
-              rows={4}
-            />
-          ) : profile.bio ? (
-            <p className="profile-bio">{profile.bio}</p>
-          ) : (
-            <p className="muted">No bio yet — add one to personalize your profile.</p>
-          )}
+          {/* User Information & Editing */}
+          <div className="profile-details">
+            {editing ? (
+              <div className="profile-edit-form">
+                <div className="input-group">
+                  <label className="input-label">Username</label>
+                  <input
+                    className="input"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                  />
+                </div>
 
-          <p className="muted">{profile.friendsCount} friends</p>
-          {profile.isSelf ? (
-            <p className="muted">{profile.email}</p>
-          ) : profile.isFriend ? (
-            <p className="muted">You are friends</p>
-          ) : (
-            <p className="muted">Not friends — send a request from Search</p>
-          )}
+                <div className="input-group">
+                  <label className="input-label">Bio</label>
+                  <textarea
+                    className="input"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell friends about yourself…"
+                    rows={3}
+                    style={{ resize: 'none' }}
+                  />
+                </div>
 
-          {profile.isSelf ? (
-            <div className="profile-actions">
-              {editing ? (
-                <>
-                  <label className="profile-upload">
-                    <span>{pictureFile ? pictureFile.name : 'Choose profile picture'}</span>
-                    <input type="file" accept="image/*" onChange={handleFileChange} />
-                  </label>
-                  <div className="profile-edit-buttons">
+                {error && <p className="error-msg">{error}</p>}
+
+                <div className="edit-actions-row">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    <Check size={16} />
+                    {saving ? 'Saving…' : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
+                    <X size={16} />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="profile-name">@{profile.username}</h1>
+                
+                {profile.bio ? (
+                  <p className="profile-bio-text">{profile.bio}</p>
+                ) : (
+                  <p className="profile-bio-placeholder muted">No bio added yet.</p>
+                )}
+
+                {/* Stats Row */}
+                <div className="profile-stats-row">
+                  <div className="stat-pill">
+                    <Users size={16} color="var(--primary)" />
+                    <strong>{profile.friendsCount || 0}</strong>
+                    <span>Friends</span>
+                  </div>
+
+                  {profile.isSelf && (
+                    <div className="stat-pill">
+                      <Mail size={16} color="var(--secondary)" />
+                      <span className="email-text">{profile.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions Row */}
+                <div className="profile-action-buttons">
+                  {profile.isSelf ? (
                     <button
                       type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={handleSave}
-                      disabled={saving}
+                      className="btn btn-primary edit-profile-btn"
+                      onClick={() => setEditing(true)}
                     >
-                      {saving ? 'Saving…' : 'Save changes'}
+                      <Edit3 size={18} />
+                      <span>Edit Profile</span>
                     </button>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={handleCancel} disabled={saving}>
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button type="button" className="btn btn-primary btn-sm profile-edit" onClick={() => setEditing(true)}>
-                  Edit profile
-                </button>
-              )}
-            </div>
-          ) : profile.isFriend ? (
-            <Link to={`/chat/${profile.id}`} className="btn btn-primary btn-sm profile-msg">
-              Message
-            </Link>
-          ) : null}
-
-          {editing && error ? <p className="error-msg">{error}</p> : null}
+                  ) : profile.isFriend ? (
+                    <Link to={`/chat/${profile.id}`} className="btn btn-primary message-friend-btn">
+                      <MessageSquare size={18} />
+                      <span>Message</span>
+                    </Link>
+                  ) : (
+                    <Link to="/search" className="btn btn-secondary">
+                      <Sparkles size={18} />
+                      <span>Add Friend in Search</span>
+                    </Link>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {(profile.isFriend || profile.isSelf) && profile.friends?.length > 0 ? (
-        <section className="friends-section">
-          <h2>Friends</h2>
-          <ul className="friends-grid">
+      {/* Friends Grid Section */}
+      {(profile.isFriend || profile.isSelf) && profile.friends?.length > 0 && (
+        <section className="friends-section-card card">
+          <div className="section-header">
+            <h2>Friends</h2>
+            <span className="badge badge-primary">{profile.friends.length}</span>
+          </div>
+
+          <div className="friends-chips-grid">
             {profile.friends.map((f) => (
-              <li key={f._id}>
-                <Link to={`/user/${f._id}`} className="friend-chip">
-                  {f.profilePicture ? (
-                    <img src={mediaUrl(f.profilePicture)} alt="" />
-                  ) : (
-                    <span className="friend-placeholder" />
-                  )}
-                  <span>{f.username}</span>
-                </Link>
-              </li>
+              <Link key={f._id} to={`/user/${f._id}`} className="friend-card-chip">
+                <Avatar src={f.profilePicture} name={f.username} size="md" />
+                <span className="friend-chip-name">{f.username}</span>
+              </Link>
             ))}
-          </ul>
+          </div>
         </section>
-      ) : null}
+      )}
     </div>
   );
 }

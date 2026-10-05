@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Video, Send, Search, Phone, MoreVertical, Trash2, Copy, CheckCheck } from 'lucide-react';
 import client from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
-import { mediaUrl } from '../utils/mediaUrl.js';
+import Avatar from '../components/common/Avatar.jsx';
 import VideoCall from '../components/VideoCall.jsx';
+import { UserSkeleton } from '../components/common/Skeleton.jsx';
+import EmptyState from '../components/common/EmptyState.jsx';
 import './Chat.css';
 
 export default function Chat() {
@@ -15,6 +18,7 @@ export default function Chat() {
   const [friends, setFriends] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [filterQuery, setFilterQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeCall, setActiveCall] = useState(null);
   const [incoming, setIncoming] = useState(null);
@@ -26,17 +30,19 @@ export default function Chat() {
 
   const myId = me?._id?.toString?.() ?? me?._id;
 
+  // Load friends list
   useEffect(() => {
     (async () => {
       try {
         const { data } = await client.get('/api/friends/list');
-        setFriends(data.friends);
+        setFriends(data.friends || []);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
+  // Fetch messages for selected thread
   useEffect(() => {
     if (!userId) {
       setMessages([]);
@@ -46,7 +52,7 @@ export default function Chat() {
     (async () => {
       try {
         const { data } = await client.get(`/api/messages/${userId}`);
-        if (!cancelled) setMessages(data.messages);
+        if (!cancelled) setMessages(data.messages || []);
       } catch {
         if (!cancelled) setMessages([]);
       }
@@ -56,6 +62,7 @@ export default function Chat() {
     };
   }, [userId]);
 
+  // Socket listener for real-time private messages
   useEffect(() => {
     if (!socket || !userId) return undefined;
 
@@ -65,10 +72,7 @@ export default function Chat() {
       const r = msg.recipient?._id ?? msg.recipient;
       const sid = s?.toString?.() ?? s;
       const rid = r?.toString?.() ?? r;
-      if (
-        (sid === myId && rid === other) ||
-        (sid === other && rid === myId)
-      ) {
+      if ((sid === myId && rid === other) || (sid === other && rid === myId)) {
         setMessages((prev) => [...prev, msg]);
       }
     };
@@ -77,10 +81,12 @@ export default function Chat() {
     return () => socket.off('private_message', onMsg);
   }, [socket, userId, myId]);
 
+  // Auto-scroll to bottom on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // WebRTC incoming call listener
   useEffect(() => {
     if (!socket) return undefined;
 
@@ -94,6 +100,7 @@ export default function Chat() {
     return () => socket.off('call:offer', onOffer);
   }, [socket, friends, myId]);
 
+  // Context menu & Touch handlers for message bubbles
   function closeMessageMenu() {
     setMessageMenu(null);
     if (touchTimerRef.current) {
@@ -210,18 +217,19 @@ export default function Chat() {
   }
 
   const activeFriend = friends.find((f) => (f._id?.toString?.() ?? f._id) === userId);
-
-  if (loading) {
-    return <p className="muted container">Loading…</p>;
-  }
+  const filteredFriends = friends.filter((f) =>
+    f.username?.toLowerCase().includes(filterQuery.toLowerCase())
+  );
 
   return (
-    <div className="chat-page container">
+    <div className="chat-app-wrapper container">
+      {/* WebRTC Call Banner & Call Window */}
       {incoming && !activeCall ? (
-        <div className="incoming-banner card">
-          <p>
-            Incoming video call from <strong>{incoming.label}</strong>
-          </p>
+        <div className="incoming-banner card animate-fade-in">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Phone className="animate-pulse" size={20} color="var(--primary)" />
+            <span>Incoming video call from <strong>{incoming.label}</strong></span>
+          </div>
           <div className="incoming-actions">
             <button
               type="button"
@@ -241,7 +249,7 @@ export default function Chat() {
             </button>
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="btn btn-danger btn-sm"
               onClick={() => {
                 socket?.emit('call:end', { to: incoming.from });
                 setIncoming(null);
@@ -264,113 +272,191 @@ export default function Chat() {
         />
       ) : null}
 
-      <div className="chat-layout">
-        <aside className="chat-sidebar card">
-          <h2>Messages</h2>
-          <ul className="chat-friends">
-            {friends.length === 0 ? (
-              <li className="muted">Add friends in Search to start chatting.</li>
-            ) : (
-              friends.map((f) => {
-                const id = f._id?.toString?.() ?? f._id;
-                return (
-                  <li key={id}>
-                    <Link
-                      to={`/chat/${id}`}
-                      className={id === userId ? 'chat-friend active' : 'chat-friend'}
-                    >
-                      {f.profilePicture ? (
-                        <img src={mediaUrl(f.profilePicture)} alt="" className="cf-av" />
-                      ) : (
-                        <span className="cf-av placeholder" />
-                      )}
-                      {f.username}
-                    </Link>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </aside>
+      <div className={`chat-layout-container ${userId ? 'has-active-chat' : 'no-active-chat'}`}>
+        {/* LEFT COLUMN: Sidebar Conversation List */}
+        <aside className="chat-sidebar-card card">
+          <div className="chat-sidebar-header">
+            <h2 className="chat-title">Messages</h2>
+            <div className="chat-search-box">
+              <Search size={16} className="search-box-icon" />
+              <input
+                className="input search-box-input"
+                placeholder="Search chats…"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+              />
+            </div>
+          </div>
 
-        <section className="chat-main card">
-          {!userId ? (
-            <p className="muted chat-placeholder">Select a friend to view messages.</p>
-          ) : (
-            <>
-              <header className="chat-thread-head">
-                <div>
-                  <strong>{activeFriend?.username || 'Chat'}</strong>
-                  <p className="muted small">Friends only · Real-time</p>
-                </div>
-                {activeFriend ? (
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={() =>
-                      setActiveCall({
-                        peerId: userId,
-                        label: activeFriend.username,
-                        isCaller: true,
-                        offer: null,
-                      })
-                    }
-                  >
-                    Video call
-                  </button>
-                ) : null}
-              </header>
-              <div className="chat-scroll">
-                {messages.map((m) => {
-                  const sid = (m.sender?._id ?? m.sender)?.toString?.() ?? m.sender;
-                  const mine = sid === myId;
+          <div className="chat-friends-scroll">
+            {loading ? (
+              <div style={{ padding: '8px' }}>
+                <UserSkeleton />
+                <UserSkeleton />
+              </div>
+            ) : filteredFriends.length === 0 ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                <p className="muted small">No conversations found. Add friends from Search to start chatting!</p>
+              </div>
+            ) : (
+              <ul className="chat-friends-list">
+                {filteredFriends.map((f) => {
+                  const id = f._id?.toString?.() ?? f._id;
+                  const isActive = id === userId;
                   return (
-                    <div
-                      key={m._id}
-                      className={mine ? 'bubble mine' : 'bubble'}
-                      onContextMenu={(e) => handleContextMenu(e, m)}
-                      onTouchStart={(e) => handleTouchStart(e, m)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                      onTouchCancel={handleTouchEnd}
-                    >
-                      <span className="bubble-text">{m.text}</span>
-                      <span className="bubble-time muted small">
-                        {new Date(m.createdAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
+                    <li key={id}>
+                      <Link
+                        to={`/chat/${id}`}
+                        className={`chat-friend-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Avatar src={f.profilePicture} name={f.username} size="md" isOnline />
+                        <div className="friend-item-info">
+                          <div className="friend-item-top">
+                            <strong className="friend-item-name">{f.username}</strong>
+                          </div>
+                          <span className="friend-item-preview muted small">Tap to message</span>
+                        </div>
+                      </Link>
+                    </li>
                   );
                 })}
-                <div ref={bottomRef} />
-              </div>
-              {messageMenu ? (
-                <div
-                  ref={menuRef}
-                  className="message-menu"
-                  style={{ top: messageMenu.y, left: messageMenu.x }}
-                >
-                  {messageMenu.mine ? (
-                    <button type="button" className="menu-item" onClick={handleDeleteMessage}>
-                      Delete message
+              </ul>
+            )}
+          </div>
+        </aside>
+
+        {/* RIGHT COLUMN: Active Chat Thread */}
+        <section className="chat-main-card card">
+          {!userId ? (
+            <div className="no-chat-selected">
+              <EmptyState
+                icon={Video}
+                title="Your Messages"
+                description="Select a conversation from the sidebar or find a friend to start chatting."
+              />
+            </div>
+          ) : (
+            <>
+              {/* Thread Header */}
+              <header className="chat-thread-header">
+                <div className="thread-header-left">
+                  {/* Mobile back button */}
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm btn-icon-only mobile-chat-back"
+                    onClick={() => navigate('/chat')}
+                    aria-label="Back to chat list"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+
+                  <Link to={`/user/${userId}`} className="thread-user-info">
+                    <Avatar src={activeFriend?.profilePicture} name={activeFriend?.username} size="md" isOnline />
+                    <div>
+                      <strong className="thread-user-name">{activeFriend?.username || 'Chat'}</strong>
+                      <span className="thread-user-status">Online · Active now</span>
+                    </div>
+                  </Link>
+                </div>
+
+                <div className="thread-header-actions">
+                  {activeFriend && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm video-call-btn"
+                      onClick={() =>
+                        setActiveCall({
+                          peerId: userId,
+                          label: activeFriend.username,
+                          isCaller: true,
+                          offer: null,
+                        })
+                      }
+                      title="Start video call"
+                    >
+                      <Video size={18} />
+                      <span className="desktop-only-text">Call</span>
                     </button>
-                  ) : null}
-                  <button type="button" className="menu-item" onClick={handleCopyMessage}>
-                    Copy message
+                  )}
+                  <button type="button" className="btn btn-ghost btn-sm btn-icon-only">
+                    <MoreVertical size={18} />
                   </button>
                 </div>
-              ) : null}
-              <form className="chat-compose" onSubmit={sendMessage}>
+              </header>
+
+              {/* Message Scroll View */}
+              <div className="chat-scroll-area">
+                {messages.length === 0 ? (
+                  <div className="empty-thread-notice">
+                    <p className="muted small">Say hello to {activeFriend?.username || 'your friend'} 👋</p>
+                  </div>
+                ) : (
+                  messages.map((m) => {
+                    const sid = (m.sender?._id ?? m.sender)?.toString?.() ?? m.sender;
+                    const mine = sid === myId;
+                    return (
+                      <div
+                        key={m._id}
+                        className={`bubble-wrapper ${mine ? 'mine' : 'other'}`}
+                        onContextMenu={(e) => handleContextMenu(e, m)}
+                        onTouchStart={(e) => handleTouchStart(e, m)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
+                      >
+                        <div className={`chat-bubble ${mine ? 'mine' : 'other'}`}>
+                          <span className="bubble-text">{m.text}</span>
+                          <div className="bubble-footer">
+                            <span className="bubble-time">
+                              {new Date(m.createdAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {mine && <CheckCheck size={14} className="bubble-check" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={bottomRef} />
+              </div>
+
+              {/* Message Context Menu Popup */}
+              {messageMenu && (
+                <div
+                  ref={menuRef}
+                  className="message-context-menu"
+                  style={{ top: messageMenu.y, left: messageMenu.x }}
+                >
+                  {messageMenu.mine && (
+                    <button type="button" className="menu-action-item danger" onClick={handleDeleteMessage}>
+                      <Trash2 size={16} /> Delete Message
+                    </button>
+                  )}
+                  <button type="button" className="menu-action-item" onClick={handleCopyMessage}>
+                    <Copy size={16} /> Copy Text
+                  </button>
+                </div>
+              )}
+
+              {/* Composer Input Bar */}
+              <form className="chat-composer-bar" onSubmit={sendMessage}>
                 <input
-                  className="input"
+                  className="input chat-composer-input"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Message…"
+                  placeholder="Type a message…"
+                  autoComplete="off"
                 />
-                <button type="submit" className="btn btn-primary">
-                  Send
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-icon-only composer-send-btn"
+                  disabled={!text.trim()}
+                  aria-label="Send message"
+                >
+                  <Send size={18} />
                 </button>
               </form>
             </>

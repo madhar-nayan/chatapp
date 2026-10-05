@@ -1,25 +1,70 @@
-.create-post {
+.feed-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+.create-post-trigger-card {
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.create-title {
-  margin: 0 0 12px;
-  font-size: 1rem;
+.create-post-trigger-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-subtle);
 }
 
-.create-form {
+.create-trigger-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trigger-input-placeholder {
+  flex: 1;
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 10px 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.create-trigger-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.trigger-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.trigger-action-btn:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.trigger-post-btn {
+  border-radius: var(--radius-full);
+  padding: 6px 16px;
+}
+
+.posts-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.create-form textarea.input {
-  resize: vertical;
-  min-height: 60px;
-}
-
-.empty-feed {
-  text-align: center;
-  padding: 32px 16px;
 }

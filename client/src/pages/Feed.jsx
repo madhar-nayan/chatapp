@@ -1,99 +1,116 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { Image, Video, Sparkles } from 'lucide-react';
 import client from '../api/client.js';
 import PostCard from '../components/PostCard.jsx';
+import StoryBar from '../components/posts/StoryBar.jsx';
+import Avatar from '../components/common/Avatar.jsx';
+import { PostSkeleton } from '../components/common/Skeleton.jsx';
+import EmptyState from '../components/common/EmptyState.jsx';
+import CreatePostModal from '../components/posts/CreatePostModal.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import './Feed.css';
 
 export default function Feed() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
-  const [caption, setCaption] = useState('');
-  const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [posting, setPosting] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  async function load() {
+  const loadFeed = useCallback(async () => {
     setError('');
     try {
       const { data } = await client.get('/api/posts/feed');
-      setPosts(data.posts);
+      setPosts(data.posts || []);
     } catch {
-      setError('Could not load feed');
+      setError('Could not load feed posts.');
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    loadFeed();
+  }, [loadFeed]);
+
+  useEffect(() => {
+    const handleRefresh = () => loadFeed();
+    window.addEventListener('post-created', handleRefresh);
+    return () => window.removeEventListener('post-created', handleRefresh);
+  }, [loadFeed]);
 
   function replacePost(updated) {
     setPosts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
   }
 
-  async function handleCreate(e) {
-    e.preventDefault();
-    if (!file) {
-      setError('Choose a photo or video');
-      return;
-    }
-    setPosting(true);
-    setError('');
-    try {
-      const fd = new FormData();
-      fd.append('media', file);
-      fd.append('caption', caption);
-      const { data } = await client.post('/api/posts', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setPosts((prev) => [data.post, ...prev]);
-      setCaption('');
-      setFile(null);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Upload failed');
-    } finally {
-      setPosting(false);
-    }
-  }
-
-  if (loading) {
-    return <p className="muted container">Loading feed…</p>;
+  function handlePostCreated(newPost) {
+    setPosts((prev) => [newPost, ...prev]);
   }
 
   return (
-    <div className="feed container">
-      <section className="create-post card">
-        <h2 className="create-title">New post</h2>
-        <form onSubmit={handleCreate} className="create-form">
-          <label className="muted" style={{ display: 'block', marginBottom: 8 }}>
-            Photo or video
-            <input
-              type="file"
-              accept="image/*,video/*"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-          </label>
-          <textarea
-            className="input"
-            rows={2}
-            placeholder="Write a caption…"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-          />
-          {error ? <p className="error-msg">{error}</p> : null}
-          <button type="submit" className="btn btn-primary" disabled={posting}>
-            {posting ? 'Sharing…' : 'Share'}
-          </button>
-        </form>
-      </section>
+    <div className="feed-page container">
+      {/* Horizontal Friends Story Bar */}
+      <StoryBar onOpenCreate={() => setIsCreateModalOpen(true)} />
 
-      {posts.length === 0 ? (
-        <p className="muted empty-feed">
-          No posts yet. Add friends to see their posts, or share your first photo.
-        </p>
-      ) : (
-        posts.map((p) => <PostCard key={p._id} post={p} onUpdate={replacePost} />)
+      {/* Create Post Prompt Card */}
+      <div className="create-post-trigger-card card" onClick={() => setIsCreateModalOpen(true)}>
+        <div className="create-trigger-top">
+          <Avatar src={user?.profilePicture} name={user?.username} size="md" />
+          <div className="trigger-input-placeholder">
+            What&apos;s on your mind, {user?.username}?
+          </div>
+        </div>
+
+        <div className="create-trigger-actions">
+          <button type="button" className="trigger-action-btn">
+            <Image size={18} color="#22C55E" />
+            <span>Photo</span>
+          </button>
+          <button type="button" className="trigger-action-btn">
+            <Video size={18} color="#EC4899" />
+            <span>Video</span>
+          </button>
+          <button type="button" className="btn btn-primary btn-sm trigger-post-btn">
+            <Sparkles size={14} />
+            <span>Post</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Feed Posts Section */}
+      {error && (
+        <div className="card" style={{ padding: '16px', color: 'var(--error)', marginBottom: '16px' }}>
+          {error}
+        </div>
       )}
+
+      {loading ? (
+        <>
+          <PostSkeleton />
+          <PostSkeleton />
+        </>
+      ) : posts.length === 0 ? (
+        <EmptyState
+          icon={Sparkles}
+          title="No posts yet"
+          description="Connect with friends or share your very first photo or video with your feed!"
+          actionLabel="Create Post"
+          onAction={() => setIsCreateModalOpen(true)}
+        />
+      ) : (
+        <div className="posts-list">
+          {posts.map((p) => (
+            <PostCard key={p._id} post={p} onUpdate={replacePost} />
+          ))}
+        </div>
+      )}
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 }

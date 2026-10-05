@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Sparkles, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import client from '../api/client.js';
 import './AuthPage.css';
 
@@ -35,38 +36,48 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card card">
-        <h1 className="auth-title">Create a New Password</h1>
-        <p className="muted auth-sub">Use the reset token from your email to choose a new password.</p>
+    <div className="auth-wrapper">
+      <div className="auth-card card animate-fade-in">
+        <div className="auth-header">
+          <div className="auth-brand-badge">
+            <Sparkles size={24} color="#FFFFFF" />
+          </div>
+          <h1 className="auth-title">New Password</h1>
+          <p className="auth-subtitle">Choose a secure new password for your ChatApp account.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <label className="auth-label">
-            New password
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete="new-password"
-            />
-          </label>
+          <div className="input-group">
+            <label className="input-label">New Password</label>
+            <div className="input-wrapper">
+              <input
+                className="input"
+                type="password"
+                placeholder="Min 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
 
           {error ? <p className="error-msg">{error}</p> : null}
           {message ? <p className="success-msg">{message}</p> : null}
 
-          <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
-            {busy ? 'Updating…' : 'Update password'}
+          <button type="submit" className="btn btn-primary btn-lg auth-submit-btn" disabled={busy}>
+            <KeyRound size={18} />
+            <span>{busy ? 'Updating…' : 'Update Password'}</span>
           </button>
         </form>
 
-        <p className="auth-toggle muted">
-          <Link to="/" className="link-btn">
-            Back to login
+        <div className="auth-footer" style={{ marginTop: '20px' }}>
+          <Link to="/" className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowLeft size={16} />
+            <span>Back to Login</span>
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
