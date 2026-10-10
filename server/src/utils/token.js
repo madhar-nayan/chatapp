@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
+
+const getSecret = () => process.env.JWT_SECRET || 'mysupersecret123';
 
 export function signToken(userId) {
-  return jwt.sign({ sub: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  
+  return jwt.sign({ sub: userId }, getSecret(), { expiresIn: '7d' });
 }
