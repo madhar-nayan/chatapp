@@ -262,6 +262,20 @@
   color: var(--primary);
 }
 
+
+/* Hide navigation bars on mobile during active chat for full screen thread experience */
+@media (max-width: 767px) {
+  .app-layout.in-active-chat .app-header {
+    display: none !important;
+  }
+  .app-layout.in-active-chat .mobile-bottom-nav {
+    display: none !important;
+  }
+  .app-layout.in-active-chat .app-main-content {
+    padding-bottom: 0 !important;
+  }
+}
+
 /* Responsive Media Queries */
 @media (min-width: 768px) {
   .app-header {

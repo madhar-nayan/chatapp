@@ -389,6 +389,12 @@ button {
   outline: none;
 }
 
+@media (max-width: 767px) {
+  input, textarea, select, .input {
+    font-size: 16px !important; /* Prevents auto-zoom on mobile iOS Safari */
+  }
+}
+
 .input:focus {
   background-color: var(--surface);
   border-color: var(--primary);
@@ -421,11 +427,6 @@ button {
   height: 8px;
   padding: 0;
   border-radius: var(--radius-full);
-}
-
-.badge-online {
-  background-color: var(--success);
-  border: 2px solid var(--surface);
 }
 
 /* Status Messages */

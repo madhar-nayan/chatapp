@@ -309,7 +309,7 @@ export default function Chat() {
                         to={`/chat/${id}`}
                         className={`chat-friend-item ${isActive ? 'active' : ''}`}
                       >
-                        <Avatar src={f.profilePicture} name={f.username} size="md" isOnline />
+                        <Avatar src={f.profilePicture} name={f.username} size="md" />
                         <div className="friend-item-info">
                           <div className="friend-item-top">
                             <strong className="friend-item-name">{f.username}</strong>
@@ -351,10 +351,9 @@ export default function Chat() {
                   </button>
 
                   <Link to={`/user/${userId}`} className="thread-user-info">
-                    <Avatar src={activeFriend?.profilePicture} name={activeFriend?.username} size="md" isOnline />
+                    <Avatar src={activeFriend?.profilePicture} name={activeFriend?.username} size="md" />
                     <div>
                       <strong className="thread-user-name">{activeFriend?.username || 'Chat'}</strong>
-                      <span className="thread-user-status">Online · Active now</span>
                     </div>
                   </Link>
                 </div>

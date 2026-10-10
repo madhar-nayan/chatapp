@@ -55,8 +55,10 @@ export default function Layout({ children }) {
     window.dispatchEvent(new CustomEvent('post-created'));
   };
 
+  const isMobileActiveChat = location.pathname.startsWith('/chat/') && location.pathname !== '/chat';
+
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${isMobileActiveChat ? 'in-active-chat' : ''}`}>
       {/* Top Header */}
       <header className="app-header">
         <div className="app-header-inner container">

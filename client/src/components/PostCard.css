@@ -77,6 +77,13 @@
   display: block;
 }
 
+@media (max-width: 767px) {
+  .post-media-wrap,
+  .post-media {
+    max-height: 480px;
+  }
+}
+
 .post-body {
   padding: 14px 16px;
 }

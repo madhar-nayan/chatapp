@@ -14,7 +14,6 @@ export default function Avatar({
   src,
   name = 'User',
   size = 'md',
-  isOnline = false,
   className = '',
   onClick,
   showBorder = false,
@@ -89,24 +88,6 @@ export default function Avatar({
           <span>{getInitials(name)}</span>
         )}
       </div>
-
-      {isOnline && (
-        <span
-          className="online-dot"
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: size === 'xs' || size === 'sm' ? '8px' : '12px',
-            height: size === 'xs' || size === 'sm' ? '8px' : '12px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--success)',
-            border: '2px solid var(--surface)',
-            boxShadow: '0 0 0 1px rgba(0,0,0,0.1)',
-            zIndex: 2,
-          }}
-        />
-      )}
     </div>
   );
 }
